@@ -52,8 +52,20 @@ public class PixelToVoxel : MonoBehaviour
             StartCoroutine(VisualizeBubbleSort());
         }
 
+        if (Input.GetKeyDown(KeyCode.H))
+        {
+            HeapSort();
+        }
+
+
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            QuickSort();
+        }
+
         if (Input.GetKeyDown(KeyCode.Space))
         {
+            StartCoroutine(VisualizeBubbleSort());
             HeapSort();
         }
     }
@@ -263,6 +275,114 @@ public class PixelToVoxel : MonoBehaviour
 
             // Recursively heapify the affected sub-tree
             heapify(n, largest);
+        }
+    }
+
+
+    int[] quickData;
+    Color32[] quickPixelsBuffer;
+    void QuickSort()
+    {
+        //fixing memoryleaks
+        quickSortImage = new Texture2D(xSize, ySize);
+        quickPixelsBuffer = new Color32[pixels.Length];
+
+        quickData = new int[ThisImageSortingData.shuffeledPosition.Length];
+
+        for (int i = 0; i < ThisImageSortingData.shuffeledPosition.Length; i++)
+        {
+            quickData[i] = ThisImageSortingData.shuffeledPosition[i];
+        }
+
+        quickPixelsBuffer = curreptImage.GetPixels32();
+        quickSortImage.SetPixels32(quickPixelsBuffer);
+        quickSortImage.Apply();
+
+        renderCurrept4.material.mainTexture = quickSortImage;
+        renderCurrept4.transform.localScale = new Vector3(((float)xSize / (float)ySize), 1, 1);
+
+        StartCoroutine("quickSort", new QuickDataFormat(quickData, 0, quickData.Length-1));
+
+    }
+
+    class QuickDataFormat {
+        public int[] arr;
+        public int min,max;
+
+        public QuickDataFormat(int[] _arr,int a, int b) {
+            arr = _arr;
+            min = a;
+            max = b;
+        }
+    }
+    
+    IEnumerator quickSort(QuickDataFormat data)
+    {
+
+        int[] arr = data.arr;
+        int left = data.min;
+        int right = data.max;
+
+        
+
+        int pivot;
+        if (left < right)
+        {
+            pivot = Partition(new QuickDataFormat(arr,left, right));
+            if (pivot > 1)
+            {
+                quickSort(new QuickDataFormat(arr,left, pivot - 1));
+
+                yield return null;
+                quickSortImage.SetPixels32(quickPixelsBuffer);
+                quickSortImage.Apply();
+            }
+            if (pivot + 1 < right)
+            {
+                quickSort(new QuickDataFormat(arr,pivot + 1, right));
+
+                yield return null;
+                quickSortImage.SetPixels32(quickPixelsBuffer);
+                quickSortImage.Apply();
+            }
+        }
+    }
+    int Partition(QuickDataFormat data)
+    {
+        int pivot;
+        int left = data.min;
+        int right = data.max;
+        int[] arr = data.arr;
+
+
+        pivot = arr[left];
+        while (true)
+        {
+            while (arr[left] < pivot)
+            {
+                left++;
+            }
+            while (arr[right] > pivot)
+            {
+                right--;
+            }
+            if (left < right)
+            {
+                int temp = arr[right];
+                arr[right] = arr[left];
+                arr[left] = temp;
+
+                Color32 tempCol = quickPixelsBuffer[right];
+                quickPixelsBuffer[right] = quickPixelsBuffer[left];
+                quickPixelsBuffer[left] = tempCol;
+
+                quickSortImage.SetPixels32(quickPixelsBuffer);
+                quickSortImage.Apply();
+            }
+            else
+            {
+                return right;
+            }
         }
     }
 }
